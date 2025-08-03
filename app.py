@@ -6,7 +6,7 @@ import datetime
 from collections import defaultdict
 
 st.set_page_config(layout="wide")
-st.title("📊 Fully Dynamic Indian Sector & Portfolio Analyzer with Recommendations")
+st.title("Fully Dynamic Indian Sector & Portfolio Analyzer with Recommendations")
 
 st.markdown("""
 Upload your **portfolio CSV** file with two columns:  
@@ -19,9 +19,7 @@ The app will:
 3. Analyze your portfolio returns and sector exposure  
 4. Recommend replacements for underperforming stocks from top sectors
 """)
-
 uploaded_file = st.file_uploader("Upload your Portfolio CSV (Ticker,Weight)", type=["csv"])
-
 # Minimal known NSE Sector ETFs (proxy for sectors)
 # You can expand this list if new ETFs launch
 INDIAN_SECTOR_ETFS = {
@@ -35,8 +33,6 @@ INDIAN_SECTOR_ETFS = {
     "Metal": "NSEMETAL.NS",
     "Finance": "NSEFIN.NS",
 }
-
-
 def get_sector_etf_performance(etfs, start, end):
     perf = {}
     data = yf.download(list(etfs.values()), start=start, end=end, auto_adjust=True, progress=False)['Close']
@@ -55,7 +51,6 @@ def get_sector_etf_performance(etfs, start, end):
         perf[sector] = cagr
     return perf
 
-
 def get_sector_of_stock(ticker):
     try:
         info = yf.Ticker(ticker).info
@@ -66,14 +61,12 @@ def get_sector_of_stock(ticker):
     except Exception:
         return 'Unknown'
 
-
 def portfolio_sector_weights(tickers, weights):
     sector_wts = defaultdict(float)
     for t, w in zip(tickers, weights):
         sector = get_sector_of_stock(t)
         sector_wts[sector] += w
     return dict(sector_wts)
-
 
 def download_portfolio_prices(tickers, start, end):
     data = yf.download(
@@ -87,14 +80,12 @@ def download_portfolio_prices(tickers, start, end):
     )
     return data
 
-
 def calculate_cagr(adj_close):
     daily_returns = adj_close.pct_change().dropna()
     cumulative_returns = (1 + daily_returns).cumprod()
     total_years = (adj_close.index[-1] - adj_close.index[0]).days / 365.25
     cagr = cumulative_returns[-1] ** (1 / total_years) - 1
     return cagr
-
 
 def recommend_replacements(underperformers, sector_perf, portfolio_sector_wts, portfolio_tickers, etf_map):
     recommendations = {}
@@ -157,12 +148,10 @@ if uploaded_file:
         if sector_perf_df.empty:
             st.warning("Failed to fetch Indian sector ETF performance. Try later or check internet connection.")
 
-
         # Fetch sector info for portfolio stocks (cache this lookup to improve speed)
         @st.cache_data(show_spinner=False)
         def cached_get_sector(ticker):
             return get_sector_of_stock(ticker)
-
 
         st.header("Fetching Sector Info for Portfolio Stocks (may take some seconds)...")
         portfolio_sector_map = {}
@@ -180,10 +169,8 @@ if uploaded_file:
         st.bar_chart(port_sector_wts_df)
 
         # Download portfolio prices & calculate portfolio performance
-        st.header("📊 Portfolio Performance Analysis")
-
+        st.header(" Portfolio Performance Analysis")
         data = download_portfolio_prices(tickers, start_date, end_date)
-
         adj_close = pd.DataFrame()
         for t in tickers:
             try:
@@ -228,7 +215,7 @@ if uploaded_file:
         st.line_chart(cumulative_returns)
 
         # Identify underperforming stocks (<30% portfolio CAGR)
-        st.header("🔍 Underperforming Stocks")
+        st.header(" Underperforming Stocks")
 
         underperformers = []
         for t in final_tickers:
@@ -240,11 +227,11 @@ if uploaded_file:
             for tkr, cagr_val in underperformers:
                 st.warning(f"🔻 {tkr}: CAGR {cagr_val:.2%} (<30% of portfolio CAGR {port_cagr:.2%})")
         else:
-            st.success("🎉 No underperforming stocks detected!")
+            st.success(" No underperforming stocks detected!")
 
         # Recommend replacements for underperformers
         if underperformers:
-            st.header("💡 Stock Replacement Recommendations")
+            st.header(" Stock Replacement Recommendations")
 
             recommendations = recommend_replacements(
                 underperformers,
